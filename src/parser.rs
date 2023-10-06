@@ -35,8 +35,9 @@ impl Parser {
         Some(tok)
     }
 
-    pub fn parse(&mut self) -> HashMap<String,Value> {
-        let mut res: HashMap<String, Value> = HashMap::new();
+    pub fn parse(&mut self) -> Value {
+        //let mut res: HashMap<String, Value> = HashMap::new();
+        let mut res = Value::Object(HashMap::new());
         let mut val_name = String::new();
         
         loop {
@@ -52,14 +53,22 @@ impl Parser {
                             val_name = value.clone();
                             self.state = ParserState::GotName;
                         }
-                        Token::Number { value: _ } => {}
+                        Token::Number { value } => {
+                            return Value::Number(value);
+                        }
                         Token::OpenCurlyBrace => {/*Ignore*/}
                         Token::ClosedCurlyBrace => {}
-                        Token::Colon => {}
-                        Token::Comma => {}
-                        Token::True => {}
-                        Token::False => {}
-                        Token::Null => {}
+                        Token::Colon => {/*Err*/}
+                        Token::Comma => {/*Err*/}
+                        Token::True => {
+                            return Value::Bool(true);
+                        }
+                        Token::False => {
+                            return Value::Bool(false);
+                        }
+                        Token::Null => {
+                            return Value::Null;
+                        }
                     }
                 }
                 ParserState::GotName => {
@@ -74,24 +83,39 @@ impl Parser {
                     match tok {
                         Token::String { value } => {
                             let val = Value::String(value);
-                            res.insert(val_name.clone(), val);
+                            if let Value::Object(hm) = &mut res {
+                                hm.insert(val_name.clone(), val);
+                            }
+                            //res.insert(val_name.clone(), val);
                         }
                         Token::Number { value } => {
                             let val = Value::Number(value);
-                            res.insert(val_name.clone(), val);
+                            if let Value::Object(hm) = &mut res {
+                                hm.insert(val_name.clone(), val);
+                            }
+                            //res.insert(val_name.clone(), val);
                         }
                         Token::OpenCurlyBrace => {/*handle nested obj*/}
                         Token::ClosedCurlyBrace => {/*This is err*/}
                         Token::Colon => {/*This is err*/}
                         Token::Comma => {/*This is err*/}
                         Token::True => {
-                            res.insert(val_name.clone(), Value::Bool(true));
+                            //res.insert(val_name.clone(), Value::Bool(true));
+                            if let Value::Object(hm) = &mut res {
+                                hm.insert(val_name.clone(), Value::Bool(true));
+                            }
                         }
                         Token::False => {
-                            res.insert(val_name.clone(), Value::Bool(false));
+                            //res.insert(val_name.clone(), Value::Bool(false));
+                            if let Value::Object(hm) = &mut res {
+                                hm.insert(val_name.clone(), Value::Bool(false));
+                            }
                         }
                         Token::Null => {
-                            res.insert(val_name.clone(), Value::Null);
+                            //res.insert(val_name.clone(), Value::Null);
+                            if let Value::Object(hm) = &mut res {
+                                hm.insert(val_name.clone(), Value::Null);
+                            }
                         }
                     }
                     self.state = ParserState::GotValue;
@@ -119,7 +143,9 @@ pub mod test {
         let mut parser = Parser::new();
         parser.read_into_stream("{\"name\":\"Wazowski\"}");
         let res = parser.parse();
-        assert_eq!(res["name"], Value::String("Wazowski".to_string()));
+        if let Value::Object(map) = res {
+            assert_eq!(map["name"], Value::String("Wazowski".to_string()));
+        }
     }
 
     #[test]
@@ -131,8 +157,10 @@ pub mod test {
                                     \"alive\": true\
                                  }");
         let res = parser.parse();
-        assert_eq!(res["name"], Value::String("Mike".to_string()));
-        assert_eq!(res["age"], Value::Number(21.0));
-        assert_eq!(res["alive"], Value::Bool(true));
+        if let Value::Object(map) = res {
+            assert_eq!(map["name"], Value::String("Mike".to_string()));
+            assert_eq!(map["age"], Value::Number(21.0));
+            assert_eq!(map["alive"], Value::Bool(true));
+        }
     }
 }
