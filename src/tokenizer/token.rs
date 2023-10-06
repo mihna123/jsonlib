@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     String {
         value: String
@@ -13,5 +13,4 @@ pub enum Token {
     True,
     False,
     Null,
-    WhiteSpace
 }
