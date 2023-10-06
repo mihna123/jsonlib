@@ -26,16 +26,44 @@ impl Tokenizer {
 
             match c {
                 '"' => self.handle_string(&mut res),
+                ',' => res.push(Token::Comma),
                 '{' => res.push(Token::OpenCurlyBrace),
                 '}' => res.push(Token::ClosedCurlyBrace),
                 ':' => res.push(Token::Colon),
                 't' => self.handle_true(&mut res),
                 'f' => self.handle_false(&mut res),
-                '0' ..= '9' => {/*Handle posible number token*/}
+                '0' ..= '9' => {
+                    self.stream.unseek();
+                    self.handle_number(&mut res);
+                }
                 _ => {}
             }
         }
         res
+    }
+    fn handle_number(&mut self, tokens: &mut Vec<Token>) {
+        let mut number = String::new();
+        let mut dot = false;
+        loop {
+            let c: char;
+            match self.stream.get_char() {
+                Some(character) => { c = character }
+                None => break
+            }
+            match c {
+                '0' ..= '9' => number.push(c),
+                '.' if !dot => {
+                    number.push(c);
+                    dot = true;
+                }
+                _ => {
+                    self.stream.unseek();
+                    break;
+                }
+            }
+        }
+        let number: f64 = number.parse().unwrap();
+        tokens.push(Token::Number { value: number });
     }
 
     fn handle_true(&mut self, tokens: &mut Vec<Token>) {
@@ -134,5 +162,28 @@ pub mod test {
                    vec![Token::String {value: "false".to_string()},
                         Token::Colon,
                         Token::False])
+    }
+
+    #[test]
+    fn test_number_token() {
+        let mut tokenizer = Tokenizer::new("420");
+        let tokens = tokenizer.tokenize();
+        assert_eq!(tokens, vec![Token::Number { value: 420.0 }]);
+    }
+
+    #[test]
+    fn test_basic_json_tokenization() {
+        let mut tokenizer = Tokenizer::new("{ \"age\" : 23, \"male\" : true }");
+        let tokens = tokenizer.tokenize();
+        assert_eq!(tokens,
+                   vec![Token::OpenCurlyBrace,
+                        Token::String { value: "age".to_string() },
+                        Token::Colon,
+                        Token::Number { value: 23.0 },
+                        Token::Comma,
+                        Token::String { value: "male".to_string() },
+                        Token::Colon,
+                        Token::True,
+                        Token::ClosedCurlyBrace]);
     }
 }
