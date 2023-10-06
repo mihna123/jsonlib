@@ -18,6 +18,16 @@ impl Parser {
         self.token_stream = tokenizer.tokenize();
     }
 
+    pub fn get_token(&mut self) -> Option<&Token> {
+        if self.index >= self.token_stream.len() {
+            return None;
+        }
+        let tok = &self.token_stream[self.index];
+        self.index += 1;
+
+        Some(tok)
+    }
+
     pub fn parse(&mut self) {
         todo!()
     }
