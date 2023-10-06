@@ -7,6 +7,7 @@ pub enum Token {
         value: f64
     },
     Colon,
+    Comma,
     OpenCurlyBrace,
     ClosedCurlyBrace,
     True,
