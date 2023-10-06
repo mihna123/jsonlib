@@ -11,6 +11,10 @@ impl InputStream {
         }
     }
 
+    pub fn unseek(&mut self) {
+        self.index -= 1;
+    }
+
     pub fn get_char(&mut self) -> Option<char> {
         if self.index >= self.buffer.len() {
             return None;
