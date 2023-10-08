@@ -6,6 +6,8 @@ pub enum Token {
     Comma,
     OpenCurlyBrace,
     ClosedCurlyBrace,
+    OpenSquareBrace,
+    ClosedSquareBrace,
     True,
     False,
     Null,

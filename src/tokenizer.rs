@@ -29,6 +29,8 @@ impl Tokenizer {
                 ',' => res.push(Token::Comma),
                 '{' => res.push(Token::OpenCurlyBrace),
                 '}' => res.push(Token::ClosedCurlyBrace),
+                '[' => res.push(Token::OpenSquareBrace),
+                ']' => res.push(Token::ClosedSquareBrace),
                 ':' => res.push(Token::Colon),
                 't' => self.handle_true(&mut res),
                 'f' => self.handle_false(&mut res),
@@ -215,6 +217,16 @@ pub mod test {
                 Token::True,
                 Token::ClosedCurlyBrace
             ]
+        );
+    }
+
+    #[test]
+    fn test_square_bracket_token() {
+        let mut tokenizer = Tokenizer::new("[]");
+        let tokens = tokenizer.tokenize();
+        assert_eq!(
+            tokens,
+            vec![Token::OpenSquareBrace, Token::ClosedSquareBrace]
         );
     }
 }
