@@ -35,7 +35,8 @@ impl Parser {
         Some(tok)
     }
 
-    pub fn parse(&mut self) -> Value {
+
+    pub fn parse_obj(&mut self) -> Value {
         let mut res = Value::Object(HashMap::new());
         let mut val_name = String::new();
 
@@ -100,7 +101,7 @@ impl Parser {
                         }
                         Token::OpenCurlyBrace => {
                             self.state = ParserState::Idle;
-                            let val = self.parse();
+                            let val = self.parse_obj();
                             if let Value::Object(hm) = &mut res {
                                 hm.insert(val_name.clone(), val);
                             }
@@ -153,7 +154,7 @@ pub mod test {
     fn test_simple_json() {
         let mut parser = Parser::new();
         parser.read_into_stream("{\"name\":\"Wazowski\"}");
-        let res = parser.parse();
+        let res = parser.parse_obj();
         if let Value::Object(map) = res {
             assert_eq!(map["name"], Value::String("Wazowski".to_string()));
         }
@@ -169,7 +170,7 @@ pub mod test {
                                     \"alive\": true\
                                  }",
         );
-        let res = parser.parse();
+        let res = parser.parse_obj();
         if let Value::Object(map) = res {
             assert_eq!(map["name"], Value::String("Mike".to_string()));
             assert_eq!(map["age"], Value::Number(21.0));
@@ -187,7 +188,7 @@ pub mod test {
                                                 }\
                                  }",
         );
-        let res = parser.parse();
+        let res = parser.parse_obj();
         if let Value::Object(map) = res {
             let obj = &map["object"];
             if let Value::Object(object) = obj {
