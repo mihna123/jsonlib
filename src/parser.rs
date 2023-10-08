@@ -56,7 +56,9 @@ impl Parser {
                             return Value::Number(value);
                         }
                         Token::OpenCurlyBrace => {/*Ignore*/}
-                        Token::ClosedCurlyBrace => {}
+                        Token::ClosedCurlyBrace => {
+                            return res;
+                        }
                         Token::Colon => {/*Err*/}
                         Token::Comma => {/*Err*/}
                         Token::True => {
@@ -92,7 +94,13 @@ impl Parser {
                                 hm.insert(val_name.clone(), val);
                             }
                         }
-                        Token::OpenCurlyBrace => {/*handle nested obj*/}
+                        Token::OpenCurlyBrace => {
+                            self.state = ParserState::Idle;
+                            let val = self.parse();
+                            if let Value::Object(hm) = &mut res {
+                                hm.insert(val_name.clone(), val);
+                            }
+                        }
                         Token::ClosedCurlyBrace => {/*This is err*/}
                         Token::Colon => {/*This is err*/}
                         Token::Comma => {/*This is err*/}
@@ -118,6 +126,9 @@ impl Parser {
                     match tok {
                         Token::Comma => {
                             self.state = ParserState::Idle;
+                        }
+                        Token::ClosedCurlyBrace => {
+                            return res;
                         }
                         _ => {/*error*/}
                     }
@@ -155,6 +166,24 @@ pub mod test {
             assert_eq!(map["name"], Value::String("Mike".to_string()));
             assert_eq!(map["age"], Value::Number(21.0));
             assert_eq!(map["alive"], Value::Bool(true));
+        }
+    }
+
+    #[test]
+    fn test_nested_json_1() {
+        let mut parser = Parser::new();
+        parser.read_into_stream("{\
+                                    \"object\": {\
+                                                    \"name\": \"Mike\"\
+                                                }\
+                                 }");
+        let res = parser.parse();
+        if let Value::Object(map) = res {
+            let obj = &map["object"];
+            if let Value::Object(object) = obj {
+                println!("{:?}", object);
+                assert_eq!(object["name"], Value::String("Mike".to_string()));
+            }
         }
     }
 }
