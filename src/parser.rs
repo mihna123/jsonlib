@@ -1,14 +1,14 @@
 mod parser_state;
 
-use crate::tokenizer::{ Tokenizer, token::Token };
+use crate::tokenizer::{token::Token, Tokenizer};
 use crate::value::Value;
-use std::collections::HashMap;
 use parser_state::ParserState;
+use std::collections::HashMap;
 
 pub struct Parser {
     token_stream: Vec<Token>,
     index: usize,
-    state: ParserState
+    state: ParserState,
 }
 
 impl Parser {
@@ -16,7 +16,7 @@ impl Parser {
         Parser {
             token_stream: vec![],
             index: 0,
-            state: ParserState::Idle
+            state: ParserState::Idle,
         }
     }
 
@@ -38,12 +38,14 @@ impl Parser {
     pub fn parse(&mut self) -> Value {
         let mut res = Value::Object(HashMap::new());
         let mut val_name = String::new();
-        
+
         loop {
             let tok: Token;
             match self.get_token() {
-                Some(token) => {tok = token},
-                None => { break; }
+                Some(token) => tok = token,
+                None => {
+                    break;
+                }
             }
             match self.state {
                 ParserState::Idle => {
@@ -55,12 +57,12 @@ impl Parser {
                         Token::Number { value } => {
                             return Value::Number(value);
                         }
-                        Token::OpenCurlyBrace => {/*Ignore*/}
+                        Token::OpenCurlyBrace => { /*Ignore*/ }
                         Token::ClosedCurlyBrace => {
                             return res;
                         }
-                        Token::Colon => {/*Err*/}
-                        Token::Comma => {/*Err*/}
+                        Token::Colon => { /*Err*/ }
+                        Token::Comma => { /*Err*/ }
                         Token::True => {
                             return Value::Bool(true);
                         }
@@ -77,7 +79,7 @@ impl Parser {
                         Token::Colon => {
                             self.state = ParserState::GotColon;
                         }
-                        _ => {/*This is err*/}
+                        _ => { /*This is err*/ }
                     }
                 }
                 ParserState::GotColon => {
@@ -101,9 +103,9 @@ impl Parser {
                                 hm.insert(val_name.clone(), val);
                             }
                         }
-                        Token::ClosedCurlyBrace => {/*This is err*/}
-                        Token::Colon => {/*This is err*/}
-                        Token::Comma => {/*This is err*/}
+                        Token::ClosedCurlyBrace => { /*This is err*/ }
+                        Token::Colon => { /*This is err*/ }
+                        Token::Comma => { /*This is err*/ }
                         Token::True => {
                             if let Value::Object(hm) = &mut res {
                                 hm.insert(val_name.clone(), Value::Bool(true));
@@ -130,10 +132,10 @@ impl Parser {
                         Token::ClosedCurlyBrace => {
                             return res;
                         }
-                        _ => {/*error*/}
+                        _ => { /*error*/ }
                     }
                 }
-            }    
+            }
         }
         res
     }
@@ -156,11 +158,13 @@ pub mod test {
     #[test]
     fn test_simple_json_2() {
         let mut parser = Parser::new();
-        parser.read_into_stream("{\
+        parser.read_into_stream(
+            "{\
                                     \"name\": \"Mike\", \
                                     \"age\": 21, \
                                     \"alive\": true\
-                                 }");
+                                 }",
+        );
         let res = parser.parse();
         if let Value::Object(map) = res {
             assert_eq!(map["name"], Value::String("Mike".to_string()));
@@ -172,11 +176,13 @@ pub mod test {
     #[test]
     fn test_nested_json_1() {
         let mut parser = Parser::new();
-        parser.read_into_stream("{\
+        parser.read_into_stream(
+            "{\
                                     \"object\": {\
                                                     \"name\": \"Mike\"\
                                                 }\
-                                 }");
+                                 }",
+        );
         let res = parser.parse();
         if let Value::Object(map) = res {
             let obj = &map["object"];

@@ -1,17 +1,17 @@
-pub mod token;
 pub mod input_stream;
+pub mod token;
 
-use token::Token;
 use input_stream::InputStream;
+use token::Token;
 
 pub struct Tokenizer {
-    stream: InputStream
+    stream: InputStream,
 }
 
 impl Tokenizer {
     pub fn new(input: &str) -> Self {
         Tokenizer {
-            stream: InputStream::new(input)
+            stream: InputStream::new(input),
         }
     }
 
@@ -20,8 +20,8 @@ impl Tokenizer {
         loop {
             let c: char;
             match self.stream.get_char() {
-                Some(character) => { c = character },
-                None => break
+                Some(character) => c = character,
+                None => break,
             }
 
             match c {
@@ -32,7 +32,7 @@ impl Tokenizer {
                 ':' => res.push(Token::Colon),
                 't' => self.handle_true(&mut res),
                 'f' => self.handle_false(&mut res),
-                '0' ..= '9' => {
+                '0'..='9' => {
                     self.stream.unseek();
                     self.handle_number(&mut res);
                 }
@@ -47,11 +47,11 @@ impl Tokenizer {
         loop {
             let c: char;
             match self.stream.get_char() {
-                Some(character) => { c = character }
-                None => break
+                Some(character) => c = character,
+                None => break,
             }
             match c {
-                '0' ..= '9' => number.push(c),
+                '0'..='9' => number.push(c),
                 '.' if !dot => {
                     number.push(c);
                     dot = true;
@@ -111,12 +111,12 @@ impl Tokenizer {
         loop {
             let c: char;
             match self.stream.get_char() {
-                Some(character) => { c = character }
-                None => break
+                Some(character) => c = character,
+                None => break,
             }
             match c {
                 '"' => break,
-                _ => { string_val.push(c) }
+                _ => string_val.push(c),
             }
         }
         tokens.push(Token::String { value: string_val });
@@ -126,42 +126,65 @@ impl Tokenizer {
 #[cfg(test)]
 pub mod test {
     use super::*;
-    
+
     #[test]
     fn test_simple_string() {
         let mut tokenizer = Tokenizer::new("\"Hello World!\"");
         let tokens = tokenizer.tokenize();
-        assert_eq!(tokens, vec![Token::String {value: "Hello World!".to_string()}])
+        assert_eq!(
+            tokens,
+            vec![Token::String {
+                value: "Hello World!".to_string()
+            }]
+        )
     }
 
     #[test]
     fn test_simple_tokens() {
         let mut tokenizer = Tokenizer::new("{\"hi\"}");
         let tokens = tokenizer.tokenize();
-        assert_eq!(tokens,
-                   vec![Token::OpenCurlyBrace,
-                        Token::String {value: "hi".to_string()},
-                        Token::ClosedCurlyBrace]);
+        assert_eq!(
+            tokens,
+            vec![
+                Token::OpenCurlyBrace,
+                Token::String {
+                    value: "hi".to_string()
+                },
+                Token::ClosedCurlyBrace
+            ]
+        );
     }
 
     #[test]
     fn test_true_token() {
         let mut tokenizer = Tokenizer::new("\"true\":true");
         let tokens = tokenizer.tokenize();
-        assert_eq!(tokens,
-                   vec![Token::String {value: "true".to_string()},
-                        Token::Colon,
-                        Token::True])
+        assert_eq!(
+            tokens,
+            vec![
+                Token::String {
+                    value: "true".to_string()
+                },
+                Token::Colon,
+                Token::True
+            ]
+        )
     }
 
     #[test]
     fn test_false_token() {
         let mut tokenizer = Tokenizer::new("\"false\":false");
         let tokens = tokenizer.tokenize();
-        assert_eq!(tokens,
-                   vec![Token::String {value: "false".to_string()},
-                        Token::Colon,
-                        Token::False])
+        assert_eq!(
+            tokens,
+            vec![
+                Token::String {
+                    value: "false".to_string()
+                },
+                Token::Colon,
+                Token::False
+            ]
+        )
     }
 
     #[test]
@@ -175,15 +198,23 @@ pub mod test {
     fn test_basic_json_tokenization() {
         let mut tokenizer = Tokenizer::new("{ \"age\" : 23, \"male\" : true }");
         let tokens = tokenizer.tokenize();
-        assert_eq!(tokens,
-                   vec![Token::OpenCurlyBrace,
-                        Token::String { value: "age".to_string() },
-                        Token::Colon,
-                        Token::Number { value: 23.0 },
-                        Token::Comma,
-                        Token::String { value: "male".to_string() },
-                        Token::Colon,
-                        Token::True,
-                        Token::ClosedCurlyBrace]);
+        assert_eq!(
+            tokens,
+            vec![
+                Token::OpenCurlyBrace,
+                Token::String {
+                    value: "age".to_string()
+                },
+                Token::Colon,
+                Token::Number { value: 23.0 },
+                Token::Comma,
+                Token::String {
+                    value: "male".to_string()
+                },
+                Token::Colon,
+                Token::True,
+                Token::ClosedCurlyBrace
+            ]
+        );
     }
 }

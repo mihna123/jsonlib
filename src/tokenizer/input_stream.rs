@@ -1,13 +1,13 @@
 pub struct InputStream {
     pub buffer: Vec<u8>,
-    pub index: usize
+    pub index: usize,
 }
 
 impl InputStream {
     pub fn new(input: &str) -> InputStream {
         InputStream {
             buffer: Vec::from(input.as_bytes()),
-            index: 0
+            index: 0,
         }
     }
 
@@ -31,7 +31,7 @@ pub mod test {
     use super::*;
 
     #[test]
-    fn test_simple_input_string(){
+    fn test_simple_input_string() {
         let mut stream = InputStream::new("Hello World!");
         assert_eq!(stream.get_char().unwrap(), 'H');
         assert_eq!(stream.get_char().unwrap(), 'e');
@@ -45,9 +45,9 @@ pub mod test {
         assert_eq!(stream.get_char().unwrap(), 'l');
         assert_eq!(stream.get_char().unwrap(), 'd');
     }
-    
+
     #[test]
-    fn test_out_of_bounds(){
+    fn test_out_of_bounds() {
         let mut stream = InputStream::new("1");
         stream.get_char();
         assert!(stream.get_char().is_none());
