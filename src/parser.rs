@@ -61,6 +61,8 @@ impl Parser {
                         Token::ClosedCurlyBrace => {
                             return res;
                         }
+                        Token::OpenSquareBrace => {}
+                        Token::ClosedSquareBrace => {}
                         Token::Colon => { /*Err*/ }
                         Token::Comma => { /*Err*/ }
                         Token::True => {
@@ -104,6 +106,8 @@ impl Parser {
                             }
                         }
                         Token::ClosedCurlyBrace => { /*This is err*/ }
+                        Token::OpenSquareBrace => {}
+                        Token::ClosedSquareBrace => {}
                         Token::Colon => { /*This is err*/ }
                         Token::Comma => { /*This is err*/ }
                         Token::True => {
