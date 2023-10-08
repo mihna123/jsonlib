@@ -226,10 +226,7 @@ pub mod test {
         let tokens = tokenizer.tokenize();
         assert_eq!(
             tokens,
-            vec![
-                Token::OpenSquareBrace,
-                Token::ClosedSquareBrace
-            ]
+            vec![Token::OpenSquareBrace, Token::ClosedSquareBrace]
         );
     }
 }
