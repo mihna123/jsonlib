@@ -36,7 +36,6 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Value {
-        //let mut res: HashMap<String, Value> = HashMap::new();
         let mut res = Value::Object(HashMap::new());
         let mut val_name = String::new();
         
@@ -86,33 +85,28 @@ impl Parser {
                             if let Value::Object(hm) = &mut res {
                                 hm.insert(val_name.clone(), val);
                             }
-                            //res.insert(val_name.clone(), val);
                         }
                         Token::Number { value } => {
                             let val = Value::Number(value);
                             if let Value::Object(hm) = &mut res {
                                 hm.insert(val_name.clone(), val);
                             }
-                            //res.insert(val_name.clone(), val);
                         }
                         Token::OpenCurlyBrace => {/*handle nested obj*/}
                         Token::ClosedCurlyBrace => {/*This is err*/}
                         Token::Colon => {/*This is err*/}
                         Token::Comma => {/*This is err*/}
                         Token::True => {
-                            //res.insert(val_name.clone(), Value::Bool(true));
                             if let Value::Object(hm) = &mut res {
                                 hm.insert(val_name.clone(), Value::Bool(true));
                             }
                         }
                         Token::False => {
-                            //res.insert(val_name.clone(), Value::Bool(false));
                             if let Value::Object(hm) = &mut res {
                                 hm.insert(val_name.clone(), Value::Bool(false));
                             }
                         }
                         Token::Null => {
-                            //res.insert(val_name.clone(), Value::Null);
                             if let Value::Object(hm) = &mut res {
                                 hm.insert(val_name.clone(), Value::Null);
                             }
