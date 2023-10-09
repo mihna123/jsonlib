@@ -4,6 +4,7 @@ use crate::tokenizer::{token::Token, Tokenizer};
 use crate::value::Value;
 use parser_state::ParserState;
 use std::collections::HashMap;
+use std::error::Error;
 
 pub struct Parser {
     token_stream: Vec<Token>,
@@ -34,7 +35,7 @@ impl Parser {
 
         Some(tok)
     }
-    fn parse_arr(&mut self) -> Value {
+    fn parse_arr(&mut self) -> Result<Value, Box<dyn Error>>{
         let mut arr: Vec<Value> = Vec::new();
 
         loop {
@@ -59,13 +60,13 @@ impl Parser {
                             self.state = ParserState::GotValue;
                         }
                         Token::OpenCurlyBrace => {
-                            let val = self.parse_obj();
+                            let val = self.parse_obj()?;
                             arr.push(val);
                             self.state = ParserState::GotValue;
                         }
                         Token::ClosedCurlyBrace => { /*This is err?*/ }
                         Token::OpenSquareBrace => {
-                            let val = self.parse_arr();
+                            let val = self.parse_arr()?;
                             arr.push(val);
                             self.state = ParserState::GotValue;
                         }
@@ -90,9 +91,11 @@ impl Parser {
                             self.state = ParserState::GotValue;
                         }
                         Token::BadToken {
-                            line_number: _,
-                            char_number: _,
-                        } => {}
+                            line_number,
+                            char_number,
+                        } => {
+                            return Err(format!("Bad token at line: {}, character: {}", line_number, char_number))?           
+                        }
                     }
                 }
                 ParserState::GotValue => {
@@ -103,11 +106,11 @@ impl Parser {
                 _ => { /*shouldn't happen*/ }
             }
         }
-
-        Value::Array(arr)
+        
+        Ok(Value::Array(arr))
     }
 
-    pub fn parse_obj(&mut self) -> Value {
+    pub fn parse_obj(&mut self) -> Result<Value, Box<dyn Error>> {
         let mut res = Value::Object(HashMap::new());
         let mut val_name = String::new();
 
@@ -127,31 +130,33 @@ impl Parser {
                             self.state = ParserState::GotName;
                         }
                         Token::Number { value } => {
-                            return Value::Number(value);
+                            return Ok(Value::Number(value));
                         }
                         Token::OpenCurlyBrace => { /*Ignore*/ }
                         Token::ClosedCurlyBrace => {
-                            return res;
+                            return Ok(res);
                         }
                         Token::OpenSquareBrace => {
-                            return self.parse_arr();
+                            return Ok(self.parse_arr()?);
                         }
                         Token::ClosedSquareBrace => {}
                         Token::Colon => { /*Err*/ }
                         Token::Comma => { /*Err*/ }
                         Token::True => {
-                            return Value::Bool(true);
+                            return Ok(Value::Bool(true));
                         }
                         Token::False => {
-                            return Value::Bool(false);
+                            return Ok(Value::Bool(false));
                         }
                         Token::Null => {
-                            return Value::Null;
+                            return Ok(Value::Null);
                         }
                         Token::BadToken {
-                            line_number: _,
-                            char_number: _,
-                        } => {}
+                            line_number,
+                            char_number,
+                        } => {
+                            return Err(format!("Bad token at line: {}, character: {}", line_number, char_number))?           
+                        }
                     }
                 }
                 ParserState::GotName => {
@@ -178,7 +183,7 @@ impl Parser {
                         }
                         Token::OpenCurlyBrace => {
                             self.state = ParserState::Idle;
-                            let val = self.parse_obj();
+                            let val = self.parse_obj()?;
                             if let Value::Object(hm) = &mut res {
                                 hm.insert(val_name.clone(), val);
                             }
@@ -186,7 +191,7 @@ impl Parser {
                         Token::ClosedCurlyBrace => { /*This is err*/ }
                         Token::OpenSquareBrace => {
                             self.state = ParserState::Idle;
-                            let val = self.parse_arr();
+                            let val = self.parse_arr()?;
                             if let Value::Object(hm) = &mut res {
                                 hm.insert(val_name.clone(), val);
                             }
@@ -210,9 +215,11 @@ impl Parser {
                             }
                         }
                         Token::BadToken {
-                            line_number: _,
-                            char_number: _,
-                        } => {}
+                            line_number,
+                            char_number,
+                        } => {
+                            return Err(format!("Bad token at line: {}, character: {}", line_number, char_number))?           
+                        }
                     }
                     self.state = ParserState::GotValue;
                 }
@@ -222,14 +229,14 @@ impl Parser {
                             self.state = ParserState::Idle;
                         }
                         Token::ClosedCurlyBrace => {
-                            return res;
+                            return Ok(res);
                         }
                         _ => { /*error*/ }
                     }
                 }
             }
         }
-        res
+        Ok(res)
     }
 }
 
@@ -238,10 +245,50 @@ pub mod test {
     use super::*;
 
     #[test]
+    #[should_panic]
+    fn test_error_handling_1() {
+        let mut parser = Parser::new();
+        parser.read_into_stream("{\"age\":32f}");
+        parser.parse_obj().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_error_handling_2() {
+        let mut parser = Parser::new();
+        parser.read_into_stream("{\"age");
+        parser.parse_obj().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_error_handling_3() {
+        let mut parser = Parser::new();
+        parser.read_into_stream("{\"false\":fald}");
+        parser.parse_obj().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_error_handling_4() {
+        let mut parser = Parser::new();
+        parser.read_into_stream("{\"true\":truj}");
+        parser.parse_obj().unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_error_handling() {
+        let mut parser = Parser::new();
+        parser.read_into_stream("{\"age\":32.4.5}");
+        parser.parse_obj().unwrap();
+    }
+
+    #[test]
     fn test_simple_json() {
         let mut parser = Parser::new();
         parser.read_into_stream("{\"name\":\"Wazowski\"}");
-        let res = parser.parse_obj();
+        let res = parser.parse_obj().expect("should be ok");
         if let Value::Object(map) = res {
             assert_eq!(map["name"], Value::String("Wazowski".to_string()));
         }
@@ -257,7 +304,7 @@ pub mod test {
                                     \"alive\": true\
                                  }",
         );
-        let res = parser.parse_obj();
+        let res = parser.parse_obj().expect("should work");
         if let Value::Object(map) = res {
             assert_eq!(map["name"], Value::String("Mike".to_string()));
             assert_eq!(map["age"], Value::Number(21.0));
@@ -275,7 +322,7 @@ pub mod test {
                                                 }\
                                  }",
         );
-        let res = parser.parse_obj();
+        let res = parser.parse_obj().expect("this will actualy never fail");
         if let Value::Object(map) = res {
             let obj = &map["object"];
             if let Value::Object(object) = obj {
@@ -289,7 +336,7 @@ pub mod test {
     fn test_simple_json_array() {
         let mut parser = Parser::new();
         parser.read_into_stream("[1,2,3]");
-        let res = parser.parse_obj();
+        let res = parser.parse_obj().expect("I cannot make an error");
         if let Value::Array(arr) = res {
             assert_eq!(arr[0], Value::Number(1.0));
             assert_eq!(arr[1], Value::Number(2.0));
@@ -303,9 +350,7 @@ pub mod test {
     fn test_json_array() {
         let mut parser = Parser::new();
         parser.read_into_stream("{ \"stuff\": [1, false, \"foo\"] }");
-        println!("{:?}", parser.token_stream);
-        let res = parser.parse_obj();
-        println!("{:?} at 288", res);
+        let res = parser.parse_obj().expect("will be fine");
         if let Value::Object(obj) = res {
             let array = &obj["stuff"];
             if let Value::Array(arr) = array {
