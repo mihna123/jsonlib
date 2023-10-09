@@ -6,12 +6,16 @@ use token::Token;
 
 pub struct Tokenizer {
     stream: InputStream,
+    line_number: usize,
+    char_number: usize,
 }
 
 impl Tokenizer {
     pub fn new(input: &str) -> Self {
         Tokenizer {
             stream: InputStream::new(input),
+            line_number: 1,
+            char_number: 0,
         }
     }
 
@@ -20,7 +24,10 @@ impl Tokenizer {
         loop {
             let c: char;
             match self.stream.get_char() {
-                Some(character) => c = character,
+                Some(character) => {
+                    c = character;
+                    self.char_number += 1;
+                },
                 None => break,
             }
 
@@ -36,7 +43,12 @@ impl Tokenizer {
                 'f' => self.handle_false(&mut res),
                 '0'..='9' => {
                     self.stream.unseek();
+                    self.char_number -= 1;
                     self.handle_number(&mut res);
+                }
+                '\n' => {
+                    self.char_number = 0;
+                    self.line_number += 1;
                 }
                 _ => {}
             }
@@ -128,6 +140,14 @@ impl Tokenizer {
 #[cfg(test)]
 pub mod test {
     use super::*;
+
+    #[test]
+    fn test_line_num() {
+        let mut tokenizer = Tokenizer::new("hey\nbro");
+        tokenizer.tokenize();
+        assert_eq!(tokenizer.line_number, 2);
+        assert_eq!(tokenizer.char_number, 3);
+    }
 
     #[test]
     fn test_simple_string() {
