@@ -35,7 +35,7 @@ impl Parser {
 
         Some(tok)
     }
-    fn parse_arr(&mut self) -> Result<Value, Box<dyn Error>>{
+    fn parse_arr(&mut self) -> Result<Value, Box<dyn Error>> {
         let mut arr: Vec<Value> = Vec::new();
 
         loop {
@@ -47,63 +47,58 @@ impl Parser {
                 }
             }
             match self.state {
-                ParserState::Idle => {
-                    match tok {
-                        Token::String { value } => {
-                            let val = Value::String(value);
-                            arr.push(val);
-                            self.state = ParserState::GotValue;
-                        }
-                        Token::Number { value } => {
-                            let val = Value::Number(value);
-                            arr.push(val);
-                            self.state = ParserState::GotValue;
-                        }
-                        Token::OpenCurlyBrace => {
-                            let val = self.parse_obj()?;
-                            arr.push(val);
-                            self.state = ParserState::GotValue;
-                        }
-                        Token::ClosedCurlyBrace => {
-                            Err("Unexpected closing curly brace in the array")?
-                        }
-                        Token::OpenSquareBrace => {
-                            let val = self.parse_arr()?;
-                            arr.push(val);
-                            self.state = ParserState::GotValue;
-                        }
-                        Token::ClosedSquareBrace => {
-                            break;
-                        }
-                        Token::Colon => {
-                            Err("Colon is invalid inside an array")?
-                        }
-                        Token::Comma => {
-                            Err("Unexpected comma")?
-                        }
-                        Token::True => {
-                            let val = Value::Bool(true);
-                            arr.push(val);
-                            self.state = ParserState::GotValue;
-                        }
-                        Token::False => {
-                            let val = Value::Bool(false);
-                            arr.push(val);
-                            self.state = ParserState::GotValue;
-                        }
-                        Token::Null => {
-                            let val = Value::Null;
-                            arr.push(val);
-                            self.state = ParserState::GotValue;
-                        }
-                        Token::BadToken {
-                            line_number,
-                            char_number,
-                        } => {
-                            return Err(format!("Bad token at line: {}, character: {}", line_number, char_number))?           
-                        }
+                ParserState::Idle => match tok {
+                    Token::String { value } => {
+                        let val = Value::String(value);
+                        arr.push(val);
+                        self.state = ParserState::GotValue;
                     }
-                }
+                    Token::Number { value } => {
+                        let val = Value::Number(value);
+                        arr.push(val);
+                        self.state = ParserState::GotValue;
+                    }
+                    Token::OpenCurlyBrace => {
+                        let val = self.parse_obj()?;
+                        arr.push(val);
+                        self.state = ParserState::GotValue;
+                    }
+                    Token::ClosedCurlyBrace => Err("Unexpected closing curly brace in the array")?,
+                    Token::OpenSquareBrace => {
+                        let val = self.parse_arr()?;
+                        arr.push(val);
+                        self.state = ParserState::GotValue;
+                    }
+                    Token::ClosedSquareBrace => {
+                        break;
+                    }
+                    Token::Colon => Err("Colon is invalid inside an array")?,
+                    Token::Comma => Err("Unexpected comma")?,
+                    Token::True => {
+                        let val = Value::Bool(true);
+                        arr.push(val);
+                        self.state = ParserState::GotValue;
+                    }
+                    Token::False => {
+                        let val = Value::Bool(false);
+                        arr.push(val);
+                        self.state = ParserState::GotValue;
+                    }
+                    Token::Null => {
+                        let val = Value::Null;
+                        arr.push(val);
+                        self.state = ParserState::GotValue;
+                    }
+                    Token::BadToken {
+                        line_number,
+                        char_number,
+                    } => {
+                        return Err(format!(
+                            "Bad token at line: {}, character: {}",
+                            line_number, char_number
+                        ))?
+                    }
+                },
                 ParserState::GotValue => {
                     if let Token::Comma = tok {
                         self.state = ParserState::Idle;
@@ -114,7 +109,7 @@ impl Parser {
                 _ => { /*Invalid states*/ }
             }
         }
-        
+
         Ok(Value::Array(arr))
     }
 
@@ -148,12 +143,8 @@ impl Parser {
                             return Ok(self.parse_arr()?);
                         }
                         Token::ClosedSquareBrace => {}
-                        Token::Colon => {
-                            Err("Expected a key or a value, got ':'")?
-                        }
-                        Token::Comma => {
-                            Err("Expected a key or a value, got ','")?
-                        }
+                        Token::Colon => Err("Expected a key or a value, got ':'")?,
+                        Token::Comma => Err("Expected a key or a value, got ','")?,
                         Token::True => {
                             return Ok(Value::Bool(true));
                         }
@@ -167,20 +158,19 @@ impl Parser {
                             line_number,
                             char_number,
                         } => {
-                            return Err(format!("Bad token at line: {}, character: {}", line_number, char_number))?           
+                            return Err(format!(
+                                "Bad token at line: {}, character: {}",
+                                line_number, char_number
+                            ))?
                         }
                     }
                 }
-                ParserState::GotName => {
-                    match tok {
-                        Token::Colon => {
-                            self.state = ParserState::GotColon;
-                        }
-                        any => {
-                            return Err(format!("Expected a colon (':'), got '{:?}'",any))?
-                        }
+                ParserState::GotName => match tok {
+                    Token::Colon => {
+                        self.state = ParserState::GotColon;
                     }
-                }
+                    any => return Err(format!("Expected a colon (':'), got '{:?}'", any))?,
+                },
                 ParserState::GotColon => {
                     match tok {
                         Token::String { value } => {
@@ -202,9 +192,7 @@ impl Parser {
                                 hm.insert(val_name.clone(), val);
                             }
                         }
-                        Token::ClosedCurlyBrace => {
-                            Err("Expected a value, got '}'")?
-                        }
+                        Token::ClosedCurlyBrace => Err("Expected a value, got '}'")?,
                         Token::OpenSquareBrace => {
                             self.state = ParserState::Idle;
                             let val = self.parse_arr()?;
@@ -213,12 +201,8 @@ impl Parser {
                             }
                         }
                         Token::ClosedSquareBrace => {}
-                        Token::Colon => {
-                            Err("Expected a value, got ':'")?
-                        }
-                        Token::Comma => {
-                            Err("Expected a value, got ','")?
-                        }
+                        Token::Colon => Err("Expected a value, got ':'")?,
+                        Token::Comma => Err("Expected a value, got ','")?,
                         Token::True => {
                             if let Value::Object(hm) = &mut res {
                                 hm.insert(val_name.clone(), Value::Bool(true));
@@ -238,25 +222,23 @@ impl Parser {
                             line_number,
                             char_number,
                         } => {
-                            return Err(format!("Bad token at line: {}, character: {}", line_number, char_number))?           
+                            return Err(format!(
+                                "Bad token at line: {}, character: {}",
+                                line_number, char_number
+                            ))?
                         }
                     }
                     self.state = ParserState::GotValue;
                 }
-                ParserState::GotValue => {
-                    match tok {
-                        Token::Comma => {
-                            self.state = ParserState::Idle;
-                        }
-                        Token::ClosedCurlyBrace => {
-                            return Ok(res);
-                        }
-                        any => {
-                            Err(format!("Excpected a ',' or a '}}', got '{:?}'", any))?
-
-                        }
+                ParserState::GotValue => match tok {
+                    Token::Comma => {
+                        self.state = ParserState::Idle;
                     }
-                }
+                    Token::ClosedCurlyBrace => {
+                        return Ok(res);
+                    }
+                    any => Err(format!("Excpected a ',' or a '}}', got '{:?}'", any))?,
+                },
             }
         }
         Ok(res)
