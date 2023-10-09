@@ -6,12 +6,16 @@ use token::Token;
 
 pub struct Tokenizer {
     stream: InputStream,
+    line_number: usize,
+    char_number: usize,
 }
 
 impl Tokenizer {
     pub fn new(input: &str) -> Self {
         Tokenizer {
             stream: InputStream::new(input),
+            line_number: 1,
+            char_number: 0,
         }
     }
 
@@ -20,7 +24,10 @@ impl Tokenizer {
         loop {
             let c: char;
             match self.stream.get_char() {
-                Some(character) => c = character,
+                Some(character) => {
+                    c = character;
+                    self.char_number += 1;
+                }
                 None => break,
             }
 
@@ -38,7 +45,15 @@ impl Tokenizer {
                     self.stream.unseek();
                     self.handle_number(&mut res);
                 }
-                _ => {}
+                '\n' => {
+                    self.char_number = 0;
+                    self.line_number += 1;
+                }
+                ' ' => {}
+                _ => res.push(Token::BadToken {
+                    line_number: self.line_number,
+                    char_number: self.char_number,
+                }),
             }
         }
         res
@@ -58,9 +73,16 @@ impl Tokenizer {
                     number.push(c);
                     dot = true;
                 }
-                _ => {
+                ' ' | ',' | '}' | ']' => {
                     self.stream.unseek();
                     break;
+                }
+                _ => {
+                    tokens.push(Token::BadToken {
+                        line_number: self.line_number,
+                        char_number: self.char_number,
+                    });
+                    return;
                 }
             }
         }
@@ -70,16 +92,53 @@ impl Tokenizer {
 
     fn handle_true(&mut self, tokens: &mut Vec<Token>) {
         //TODO: fix the unwraping
-        let mut next = self.stream.get_char().unwrap();
+        let mut next: char;
+        next = if let Some(character) = self.stream.get_char() {
+            character
+        } else {
+            tokens.push(Token::BadToken {
+                line_number: self.line_number,
+                char_number: self.char_number,
+            });
+            return;
+        };
         if next != 'r' {
+            tokens.push(Token::BadToken {
+                line_number: self.line_number,
+                char_number: self.char_number,
+            });
             return;
         }
-        next = self.stream.get_char().unwrap();
+        next = if let Some(character) = self.stream.get_char() {
+            character
+        } else {
+            tokens.push(Token::BadToken {
+                line_number: self.line_number,
+                char_number: self.char_number,
+            });
+            return;
+        };
         if next != 'u' {
+            tokens.push(Token::BadToken {
+                line_number: self.line_number,
+                char_number: self.char_number,
+            });
             return;
         }
-        next = self.stream.get_char().unwrap();
+        next = if let Some(character) = self.stream.get_char() {
+            character
+        } else {
+            tokens.push(Token::BadToken {
+                line_number: self.line_number,
+                char_number: self.char_number,
+            });
+            return;
+        };
         if next != 'e' {
+            tokens.push(Token::BadToken {
+                line_number: self.line_number,
+                char_number: self.char_number,
+            });
             return;
         }
 
@@ -88,20 +147,69 @@ impl Tokenizer {
 
     fn handle_false(&mut self, tokens: &mut Vec<Token>) {
         //TODO: fix the unwraping
-        let mut next = self.stream.get_char().unwrap();
+        let mut next: char;
+        next = if let Some(character) = self.stream.get_char() {
+            character
+        } else {
+            tokens.push(Token::BadToken {
+                line_number: self.line_number,
+                char_number: self.char_number,
+            });
+            return;
+        };
         if next != 'a' {
+            tokens.push(Token::BadToken {
+                line_number: self.line_number,
+                char_number: self.char_number,
+            });
             return;
         }
-        next = self.stream.get_char().unwrap();
+        next = if let Some(character) = self.stream.get_char() {
+            character
+        } else {
+            tokens.push(Token::BadToken {
+                line_number: self.line_number,
+                char_number: self.char_number,
+            });
+            return;
+        };
         if next != 'l' {
+            tokens.push(Token::BadToken {
+                line_number: self.line_number,
+                char_number: self.char_number,
+            });
             return;
         }
-        next = self.stream.get_char().unwrap();
+        next = if let Some(character) = self.stream.get_char() {
+            character
+        } else {
+            tokens.push(Token::BadToken {
+                line_number: self.line_number,
+                char_number: self.char_number,
+            });
+            return;
+        };
         if next != 's' {
+            tokens.push(Token::BadToken {
+                line_number: self.line_number,
+                char_number: self.char_number,
+            });
             return;
         }
-        next = self.stream.get_char().unwrap();
+        next = if let Some(character) = self.stream.get_char() {
+            character
+        } else {
+            tokens.push(Token::BadToken {
+                line_number: self.line_number,
+                char_number: self.char_number,
+            });
+            return;
+        };
         if next != 'e' {
+            tokens.push(Token::BadToken {
+                line_number: self.line_number,
+                char_number: self.char_number,
+            });
             return;
         }
 
@@ -114,7 +222,13 @@ impl Tokenizer {
             let c: char;
             match self.stream.get_char() {
                 Some(character) => c = character,
-                None => break,
+                None => {
+                    tokens.push(Token::BadToken {
+                        line_number: self.line_number,
+                        char_number: self.char_number,
+                    });
+                    return;
+                }
             }
             match c {
                 '"' => break,
@@ -128,6 +242,66 @@ impl Tokenizer {
 #[cfg(test)]
 pub mod test {
     use super::*;
+
+    #[test]
+    fn test_bad_string() {
+        let mut tokenizer = Tokenizer::new("\"This is a bad string");
+        let tokens = tokenizer.tokenize();
+        assert_eq!(
+            tokens,
+            vec![Token::BadToken {
+                line_number: 1,
+                char_number: 1
+            }],
+        );
+    }
+
+    #[test]
+    fn test_bad_number() {
+        let mut tokenizer = Tokenizer::new("342d");
+        let tokens = tokenizer.tokenize();
+        assert_eq!(
+            tokens,
+            vec![Token::BadToken {
+                line_number: 1,
+                char_number: 1
+            }],
+        );
+    }
+
+    #[test]
+    fn test_bad_false() {
+        let mut tokenizer = Tokenizer::new("falsf");
+        let tokens = tokenizer.tokenize();
+        assert_eq!(
+            tokens,
+            vec![Token::BadToken {
+                line_number: 1,
+                char_number: 1,
+            }]
+        );
+    }
+
+    #[test]
+    fn test_bad_true() {
+        let mut tokenizer = Tokenizer::new("trud");
+        let tokens = tokenizer.tokenize();
+        assert_eq!(
+            tokens,
+            vec![Token::BadToken {
+                line_number: 1,
+                char_number: 1,
+            }]
+        );
+    }
+
+    #[test]
+    fn test_line_num() {
+        let mut tokenizer = Tokenizer::new("hey\nbro");
+        tokenizer.tokenize();
+        assert_eq!(tokenizer.line_number, 2);
+        assert_eq!(tokenizer.char_number, 3);
+    }
 
     #[test]
     fn test_simple_string() {
