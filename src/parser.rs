@@ -89,6 +89,7 @@ impl Parser {
                             arr.push(val);
                             self.state = ParserState::GotValue;
                         }
+                        Token::BadToken { line_number: _, char_number: _ } => {}
                     }
                 }
                 ParserState::GotValue => {
@@ -144,6 +145,7 @@ impl Parser {
                         Token::Null => {
                             return Value::Null;
                         }
+                        Token::BadToken { line_number: _, char_number: _ } => {}
                     }
                 }
                 ParserState::GotName => {
@@ -201,6 +203,7 @@ impl Parser {
                                 hm.insert(val_name.clone(), Value::Null);
                             }
                         }
+                        Token::BadToken { line_number: _, char_number: _ } => {}
                     }
                     self.state = ParserState::GotValue;
                 }

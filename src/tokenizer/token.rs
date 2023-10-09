@@ -11,4 +11,8 @@ pub enum Token {
     True,
     False,
     Null,
+    BadToken {
+        line_number: usize,
+        char_number: usize,
+    },
 }
