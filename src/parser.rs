@@ -100,10 +100,12 @@ impl Parser {
                     }
                 },
                 ParserState::GotValue => {
-                    if let Token::Comma = tok {
-                        self.state = ParserState::Idle;
-                    } else {
-                        Err("Expected a comma after a value in the array")?
+                    match tok {
+                        Token::Comma => self.state = ParserState::Idle,
+                        Token::ClosedSquareBrace => {
+                            return Ok(Value::Array(arr));
+                        }
+                        _ => Err("Expected a comma or array ending after a value in the array!")?
                     }
                 }
                 _ => { /*Invalid states*/ }
