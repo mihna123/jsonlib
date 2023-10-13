@@ -1,6 +1,6 @@
 mod parser;
 mod tokenizer;
-mod value;
+pub mod value;
 
 use value::Value;
 use parser::Parser;
