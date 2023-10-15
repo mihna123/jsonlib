@@ -1,6 +1,6 @@
 # jsonlib
 
-__Jsonlib__ is a json _parsing_ and _serializing_ tool written completely in __Rust!__ 🦀  
+__Jsonlib__ is a json _parsing_ tool written in __Rust!__ 🦀  
 
 ### Usage
 The parser returns a `Result` :
@@ -65,5 +65,5 @@ if let Value::Object(obj) = &result {
 
 ### Current development
 
-As of right now there is a working parser, it is still a work in progress and needs to be tested more. The json serialiser is on the way!
+As of right now there is a working parser, it is a work in progress and needs to be tested more... 
 
