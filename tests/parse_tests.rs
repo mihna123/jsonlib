@@ -1,6 +1,6 @@
 use jsonlib;
-use std::fs;
 use jsonlib::value::Value;
+use std::fs;
 
 #[test]
 fn test_parsing_01() {
@@ -8,7 +8,7 @@ fn test_parsing_01() {
     let obj = jsonlib::parse(data.as_str()).expect("should parse no problem");
     if let Value::Object(o) = &obj {
         if let Value::Object(b) = &o["glossary"] {
-            assert_eq!(b["title"], Value::String("example glossary".to_string()) );
+            assert_eq!(b["title"], Value::String("example glossary".to_string()));
         }
     } else {
         panic!("Parsed value was not object");
@@ -28,5 +28,4 @@ fn test_parsing_02() {
     } else {
         panic!("Value is not an object!");
     }
-
 }

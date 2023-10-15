@@ -99,15 +99,13 @@ impl Parser {
                         ))?
                     }
                 },
-                ParserState::GotValue => {
-                    match tok {
-                        Token::Comma => self.state = ParserState::Idle,
-                        Token::ClosedSquareBrace => {
-                            return Ok(Value::Array(arr));
-                        }
-                        _ => Err("Expected a comma or array ending after a value in the array!")?
+                ParserState::GotValue => match tok {
+                    Token::Comma => self.state = ParserState::Idle,
+                    Token::ClosedSquareBrace => {
+                        return Ok(Value::Array(arr));
                     }
-                }
+                    _ => Err("Expected a comma or array ending after a value in the array!")?,
+                },
                 _ => { /*Invalid states*/ }
             }
         }
@@ -289,6 +287,17 @@ pub mod test {
         let mut parser = Parser::new();
         parser.read_into_stream("{\"age\":32.4.5}");
         parser.parse_obj().unwrap();
+    }
+
+    #[test]
+    fn test_value_extraction() {
+        let mut parser = Parser::new();
+        parser.read_into_stream("{\"name\":\"Wazowski\"}");
+        let obj = parser.parse_obj().expect("should be ok").get_obj().unwrap();
+        assert_eq!(
+            obj["name"].clone().get_str().unwrap(),
+            "Wazowski".to_string()
+        );
     }
 
     #[test]
